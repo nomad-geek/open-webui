@@ -1,3 +1,8 @@
+networks:
+  backend:
+    external: false
+    name: "backend"
+
 services:
   ollama:
     volumes:
@@ -6,7 +11,12 @@ services:
     pull_policy: always
     tty: true
     restart: unless-stopped
-    image: ollama/ollama:${OLLAMA_DOCKER_TAG-latest}
+    image: ollama/ollama:latest
+    expose:
+      - 11434/tcp
+    networks:
+      - backend
+    hostname: ollama
 
   open-webui:
     build:
@@ -14,20 +24,21 @@ services:
       args:
         OLLAMA_BASE_URL: '/ollama'
       dockerfile: Dockerfile
-    image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
+    #image: ghcr.io/open-webui/open-webui:${WEBUI_DOCKER_TAG-main}
     container_name: open-webui
     volumes:
       - open-webui:/app/backend/data
     depends_on:
       - ollama
-    ports:
-      - ${OPEN_WEBUI_PORT-3000}:8080
+    expose:
+      - 8080/tcp
     environment:
       - 'OLLAMA_BASE_URL=http://ollama:11434'
       - 'WEBUI_SECRET_KEY='
-    extra_hosts:
-      - host.docker.internal:host-gateway
+    networks:
+      - backend
     restart: unless-stopped
+    hostname: opewebui
 
 volumes:
   ollama: {}
